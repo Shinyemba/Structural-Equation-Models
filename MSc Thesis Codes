@@ -1,0 +1,503 @@
+sessionInfo()
+
+setwd("C:\\Users\\tshinyemba\\Documents\\Academics\\Thesis\\Analysis")
+
+Study site map
+
+install.packages(c("dismo","ggplot2","rgbig","ggmap","maptools","GISTools","mapdata","ggsn"))
+
+library(foreign); library(dismo); library(ggplot2); library(rgbif)
+
+library(ggmap);library(maptools);library(GISTools);library(mapdata);library(ggsn)
+link <- "http://biogeo.ucdavis.edu/data/gadm2.8/rds/NAM_adm1.rds"
+download.file(url=link, destfile="file.rda", mode="wb")
+gadmNab <- readRDS("file.rda")  
+plot(gadmNab)
+# plot with colour filled in, title and label.
+plot(gadmNab, col = 'lightblue', border = 'darkgrey')
+points(17.0658, -22.5609,col=2,pch=18)
+text(17, -22, "Windhoek")
+geo<-read.csv("C:\\Users\\tshinyemba\\Documents\\Academics\\Thesis\\Analysis\\Geo points.csv",header=T)
+mymap<-qmap(location="Namibia,Wanaheda",zoom = 13,maptype="toner",source = c("stamen"),title="Study Site")
+mymap
+mymap+geom_jitter(data=geo,aes(geo$lon,geo$lat),alpha=0.6, size = 2, color = "red")
+north2(mymap+geom_jitter(data=geo,aes(geo$lon,geo$lat),alpha=0.6, size = 2, color = "red"),0.06,0.15,scale = 0.2, symbol = 1)
+
+# EXPLORATORY FACTOR ANALYSIS AND PRINCIPAL COMPONENT ANALYSIS FOOD INSECURITY
+
+file.choose()
+
+mydata<-read.csv("C:\\Users\\tshinyemba\\Documents\\Academics\\Thesis\\UrLife_4THAPRIL2017_FS.csv",header=T,sep=",")
+Inspecting for data completeness
+head(mydata) ; is.na(mydata);str(mydata)
+summary(mydata,na.rm=T)  # to see if there is any missing data
+newdata<-na.omit(mydata) # Reduces the data from 416 obs to 393 obs
+summary(newdata);head(newdata)
+
+install.packages("psych")
+library(psych)
+
+# Varimax Rotated Principal Components
+
+fit <- principal(newdata, nfactors=1,rotate="varimax", sort=TRUE)
+summary(fit)
+fit$loadings
+
+# Maximum Likelihood Factor Analysis
+
+fit1<- factanal(newdata, 1, rotate="varimax")
+print(fit1, digits=3, cutoff=.3, sort=TRUE)
+fit1$loadings
+
+# Determine Number of Factors to Extract
+
+install.packages("nFactors")
+library(nFactors)
+ev <- eigen(cor(newdata))
+ap <- parallel(subject=nrow(newdata),var=ncol(newdata),rep=100,cent=.05)
+nS <- nScree(x=ev$values, aparallel=ap$eigen$qevpea)
+plotnScree(nS,main="Number of factors to retain on Food security")	#/Food insecurity END/
+
+#WHOQOL-BREF
+mydataQoL<-read.csv("C:\\Users\\tshinyemba\\Documents\\Academics\\Thesis\\UrLife_4THAPRIL2017_QoL1.csv",header=T,sep=",")
+head(mydataQoL);is.na(mydataQoL)
+str(mydataQoL);summary(mydataQoL,na.rm=T)  # to see if there is any missing data
+newdataQoL<-na.omit(mydataQoL) # Reduces the data from 416 obs to 327 obs
+summary(newdataQoL);head(newdataQoL)
+
+#Varimax Rotated Principal Components
+
+fitWHOQoL <- principal(newdataQoL, nfactors=6,rotate="varimax")
+summary(fitWHOQoL)
+fitWHOQoL$loadings
+
+# Maximum Likelihood Factor Analysis
+fitWHOQoL1<- factanal(newdataQoL, 6, rotation ="varimax")
+print(fitWHOQoL1, digits=3, cutoff=.3, sort=TRUE)
+fitWHOQoL1$loadings
+load <- fitWHOQoL1$loadings[,1:2]
+plot(load,type="n")
+text(load,labels=names(newdataQoL),cex=.7)
+
+# Determine Number of Factors to Extract
+ev <- eigen(cor(newdataQoL))
+ap <- parallel(subject=nrow(newdataQoL),var=ncol(newdataQoL),rep=100,cent=.05)
+nS <- nScree(x=ev$values, aparallel=ap$eigen$qevpea)
+plotnScree(nS, main="Number of factors to retain on WHOQol-Bref")	#/WHOQOL-BREF END/
+
+#EQ-5D
+mydataE5QoL<-read.csv("C:\\Users\\tshinyemba\\Documents\\Academics\\Thesis\\UrLife_4THAPRIL2017_E5QoL.csv",header=T,sep=",")
+head(mydataE5QoL);is.na(mydataE5QoL)
+str(mydataE5QoL)
+summary(mydataE5QoL,na.rm=T)  # to see if there is any missing data
+newdataE5QoL<-na.omit(mydataE5QoL) # Reduces the data from 416 obs to 362 obs
+summary(newdataE5QoL);head(newdataE5QoL)
+
+
+# Varimax Rotated Principal Components 
+fitEQ5Qol <- principal(newdataE5QoL, nfactors=7,rotate="varimax")
+summary(fitEQ5Qol)
+fitEQ5Qol$loadings
+
+# Maximum Likelihood Factor Analysis
+fitEQ5Qol1<- factanal(newdataE5QoL, 7, rotation ="varimax")
+print(fitEQ5Qol1, digits=3, cutoff=.3, sort=TRUE)
+fitEQ5Qol1$loadings
+
+# Determine Number of Factors to Extract
+ev <- eigen(cor(newdataE5QoL))
+ap <- parallel(subject=nrow(newdataE5QoL),var=ncol(newdataE5QoL),rep=100,cent=.05)
+nS <- nScree(x=ev$values, aparallel=ap$eigen$qevpea)
+plotnScree(nS,main="Number of factors to retain on European EQ-5D")	#/ EQ-5D END/
+
+#HIERARCHICAL CLUSTER ANALYSIS
+
+library(pvclust)
+Food insecurity
+resulta <- pvclust(newdata, method.dist="euclidean", method.hclust="ward.D2", nboot=10000)
+plot(resulta)
+abline(h=18, col="red", lty=2.5)
+pvrect(resulta, alpha=0.95)
+
+#WHOQOL-BREF
+
+resul <- pvclust(newdataQoL, method.dist="euclidean", method.hclust="ward.D2", nboot=10000)
+plot(resul)
+abline(h=37, col="red", lty=2.5)
+pvrect(resul, alpha=0.95)
+
+#EQ-5D
+res <- pvclust(newdataE5QoL, method.dist="euclidean", method.hclust="ward.D2", nboot=10000)
+plot(res)
+abline(h=69, col="red", lty=2.5)
+pvrect(res, alpha=0.95)		/ EQ-5D END/
+
+#CONFIRMATORY FACTOR ANALYSIS
+
+#install.packages(c("lavaan","semPlot","semTools","nonnest2","MVN","GPArotation","gridExtra","knitr",
+"dplyr","tidyr",dependencies =T ))
+library(lavaan);library(semPlot);library(semTools);library(nonnest2);library(MVN);library(lattice)
+library(GPArotation);library(gridExtra);library(qgraph);library(knitr);library(dplyr);library(tidyr)
+thesisdata<-read.csv("C:\\Users\\tshinyemba\\Documents\\Academics\\Thesis\\
+Thesis_QoL_FS_Tobias_27_Sept_17_With_Factors.csv",header=T,sep=",")
+
+#Food insecurity
+
+#fitting a one-factor CFA model
+#Specifying the three-factor model
+
+FS.model1<-'food security=~q111+q112+q113+q114+q115+q116+q117+q118+q119+q120'
+
+#Performing the regression and storing the regression model
+
+fit1f<-cfa(FS.model1,data=thesisdata)
+
+#obtaining the regression coefficients
+summary(fit1f,fit.measures=TRUE,standardized=TRUE)
+
+#Obtaining the goodness of fit indicators of the model
+fitMeasures(fit1f,c("chisq", "rmsea", "srmr", "gfi", "ecvi"))
+reliability(fit1f)
+inspect(fit1f)
+
+# Obtaining the factor loadings of the three-factor model
+parameterEstimates(fit1f, standardized=TRUE,ci=TRUE,level=0.95) %>% filter(op == "=~") %>%
+select('Latent Factor'=lhs, Indicator=rhs, B=est, SE=se, Z=z, 'p-value'=pvalue, Beta=std.all) %>%
+kable(digits = 3, format="pandoc", caption="Factor Loadings") # Summarises the table
+
+#plotting the one-factor model 
+semPaths(fit1f, what = "paths", whatLabels="std", style="lisrel", layout = "tree",  intercepts = TRUE,
+residuals = TRUE,edge.label.cex=0.8, thresholds = TRUE,  intStyle = "multi", rotation = 4,
+curve= 2,curvature = 1,nCharNodes = 4, nCharEdges = 3, edge.color="blue",reorder =
+TRUE,structural = FALSE, equalizeManifests =FALSE, optimizeLatRes = TRUE, node.width =
+1.1,  edge.width = 0.5, shapeMan = "rectangle", shapeLat = "ellipse",  shapeInt = "triangle", sizeMan
+= 4, sizeInt = 4, sizeLat = 6, node.label.cex = .5,edge.label.color = "black")	#/ Food insecurity END/
+
+#WHOQOL-BREF
+#specifying the Four-factor model (Unmodified model)
+model.WHOQoL	<- “Social=~q51+q50+q49+q48+q47+q52
+                		Environmental=~q54+q41+q55+q53+q56+q42+q44
+                		Physical=~q39+q38+q40+q43
+                		Psychological=~newq59+q45+q37+q46"
+                    
+#Performing the regression and storing the regression model, saturated model
+WHOQoL4f<-cfa(model.WHOQoL,data=thesisdata)
+
+#obtaining the regression coefficients
+summary(WHOQoL4f,fit.measures=TRUE,standardized=TRUE)
+
+#Obtaining the goodness of fit indicators of the model
+fitMeasures(WHOQoL4f,c("chisq", "rmsea", "srmr", "gfi", "ecvi"))
+reliability(WHOQoL4f)
+inspect(WHOQoL4f)
+
+# Obtaining the factor loadings of the three-factor model
+parameterEstimates(WHOQoL4f, standardized=TRUE,ci=TRUE,level=0.95) %>% filter(op == "=~")
+%> % select ('Latent Factor'=lhs, Indicator=rhs, B=est, SE=se, Z=z, 'p-value'=pvalue,
+Beta=std.all) %> % kable(digits = 3, format="pandoc", caption="Factor Loadings") # Summarises the table
+
+#ploting the four-factor model 
+semPaths(WHOQoL4f, what = "paths", whatLabels="std", style="lisrel", layout = "tree2", intercepts =
+	TRUE, residuals = TRUE,edge.label.cex=0.7, thresholds = TRUE, intStyle = "multi", rotation = 4, 
+	curve=2,curvature = 1,nCharNodes = 4, nCharEdges = 3, edge.color="blue",reorder =
+	TRUE,structural = FALSE,  equalizeManifests =FALSE, optimizeLatRes = TRUE, node.width =
+1.1, edge.width = 0.5, shapeMan = "rectangle", shapeLat = "ellipse", shapeInt = "triangle", sizeMan
+= 4, sizeInt = 4, sizeLat = 5, node.label.cex = .5, edge.label.color = "black")
+
+#Specifying the Three-factor model (modified model)
+model.WHOQoL3f	<-"Social=~q51+q50+q49+q48+q47+q52
+                		Environmental=~q54+q41+q55+q53+q56+q42+q44
+               		Physical=~q39+q38+q40+q43"
+                  
+#Performing the regression and storing the regression model
+WHOQoL3f<-cfa(model.WHOQoL3f,data=thesisdata)
+
+#obtaining the regression coefficients
+summary(WHOQoL3f,fit.measures=TRUE,standardized=TRUE)
+
+#Obtaining the goodness of fit indicators of the model
+fitMeasures(WHOQoL3f,c("chisq", "rmsea", "srmr", "gfi", "ecvi"))
+reliability(WHOQoL3f)
+
+# Obtaining the factor loadings of the three-factor model
+parameterEstimates(WHOQoL3f, standardized=TRUE,ci=TRUE,level=0.95) %>% filter(op == "=~")
+	%>% select('Latent Factor'=lhs, Indicator=rhs, B=est, SE=se, Z=z, 'p-value'=pvalue,  Beta=std.all)
+%>% kable(digits = 3, format="pandoc", caption="Factor Loadings") # Summarises the table
+
+#ploting the three-factor model 
+semPaths(WHOQoL3f, what = "paths", whatLabels="std", style="lisrel", layout = "tree2", intercepts =
+TRUE, residuals = TRUE,edge.label.cex=0.7, thresholds = TRUE, intStyle = "multi", rotation = 4,
+Curve=2, curvature = 1, nCharNodes = 4, nCharEdges = 3, edge.color="blue",reorder =
+TRUE,structural = FALSE, equalizeManifests =FALSE, optimizeLatRes = TRUE, node.width =
+1.2, node.height= 0.5, edge.width = 0.5, shapeMan = "rectangle", shapeLat = "ellipse", shapeInt =
+"triangle", sizeMan = 4, sizeInt = 4, sizeLat = 5, node.label.cex = .5, edge.label.color = "black")
+
+#Obtaining goodness of fit
+fitMeasures(WHOQoL4f,c("ecvi","aic","bic"))
+fitMeasures(WHOQoL3f,c("ecvi","aic","bic"))			#/WHOQOL-BREF END/
+EQ-5D
+#Specifying the Four-factor model (unmodified) 
+model.EuroQol<-"pain=~q94+q96+q89+q90+q95+q91+q93+q87+q86+q88+q98+q92+q85+q97+q83
+                anxiety=~q79+q78+q68+q77+q66+q67+q76+q69+q73+q71+q72+q70
+                selfcare=~q63+q64+q61+q62+q60+q65
+                usualacti=~q74+q75+q84"
+#Performing the regression and storing the regression model
+EuroQol4f<-cfa(model.EuroQol,data=thesisdata)
+
+#obtaining the regression coefficients
+summary(EuroQol4f,fit.measures=TRUE,standardized=TRUE)
+#Obtaining the goodness of fit indicators of the model
+fitMeasures(EuroQol4f,c("chisq", "rmsea", "srmr", "gfi", "ecvi"))
+reliability(EuroQol4f)
+inspect(EuroQol4f)
+
+#obtain modification indices
+modificationindices(EuroQol4f)
+
+# Obtaining the factor loadings of the three-factor model
+parameterEstimates(EuroQol4f, standardized=TRUE,ci=TRUE,level=0.95) %>% filter(op == "=~") %>%
+select('Latent Factor'=lhs, Indicator=rhs, B=est, SE=se, Z=z, 'p-value'=pvalue, Beta=std.all) %>%
+kable(digits = 3, format="pandoc", caption="Factor Loadings") # Summarises the table
+
+#ploting the three-factor model
+semPaths(EuroQol4f, what = "paths", whatLabels="std", style="lisrel", layout ="circle3",
+         intercepts = TRUE, residuals = TRUE,edge.label.cex=0.6, thresholds = TRUE, 
+         intStyle = "multi", rotation = 3,curve=1,curvature = 2.5,nCharNodes = 0, 
+         nCharEdges = 0, edge.color="blue",reorder = TRUE,structural = FALSE,
+         equalizeManifests =FALSE, optimizeLatRes = TRUE, node.width = 1.2,node.heith=0.1,
+         edge.width = 0.5, shapeMan = "rectangle", shapeLat = "ellipse",
+         shapeInt = "triangle", sizeMan = 4, sizeInt = 2, sizeLat = 4,
+         node.label.cex =.6,edge.label.color = "black",unCol = "#070b8c",groups = "latents", pastel = TRUE)
+
+# four-factor model with insignificant manifest deleted (modified)
+#Specifying the Four-factor model, q78 and q60 deleted
+model.EuroQol1f<-"pain=~q94+q96+q89+q90+q95+q91+q93+q87+q86+q88+q98+q92+q85+q97+q83
+                  	anxiety=~q79+q68+q77+q66+q67+q76+q69+q73+q71+q72+q70
+                  	selfcare=~q63+q64+q61+q62+q65
+                  	usualacti=~q74+q75+q84"
+                    
+#Performing the regression and storing the regression model
+EuroQol1f<-cfa(model.EuroQol1f,data=thesisdata)
+
+#obtaining the regression coefficients
+summary(EuroQol1f,fit.measures=TRUE,standardized=TRUE)
+
+#Obtaining the goodness of fit indicators of the model
+fitMeasures(EuroQol1f,c("chisq", "rmsea", "srmr", "gfi", "ecvi"))
+reliability(EuroQol1f)
+
+# Obtaining the factor loadings of the three-factor model
+parameterEstimates(EuroQol1f, standardized=TRUE,ci=TRUE,level=0.95) %>%
+  filter(op == "=~") %>%
+  select('Latent Factor'=lhs, Indicator=rhs, B=est, SE=se, Z=z, 'p-value'=pvalue, 
+         Beta=std.all) %>% kable(digits = 3, format="pandoc", caption="Factor Loadings") # Summarises the table
+
+#ploting the four-factor modified model 
+semPaths(EuroQol1f, what = "paths", whatLabels="std", style="lisrel", layout = "circle3",
+         intercepts = TRUE, residuals = TRUE,edge.label.cex=0.8, thresholds = TRUE, 
+         intStyle = "multi", rotation = 3,curve=2,curvature = 1,nCharNodes = 0, 
+         nCharEdges = 0, edge.color="blue",reorder = TRUE,structural = FALSE,
+         equalizeManifests =FALSE, optimizeLatRes = TRUE, node.width = 1.1,
+         edge.width = 0.5, shapeMan = "rectangle", shapeLat = "ellipse",
+         shapeInt = "triangle", sizeMan = 4, sizeInt = 4, sizeLat = 6,
+         node.label.cex = .5,edge.label.color = "black",groups = "latents", pastel = TRUE)
+         
+#Obtaining goodness of fit
+fitMeasures(EuroQol1f,c("ecvi","aic","bic"))
+fitMeasures(EuroQol4f,c("ecvi","aic","bic"))				#/ EQ-5D END/
+
+#STRUCTURAL EQUATION MODELLING
+
+#Specifying the Structural model of food security and quality of life
+mySemModel<-"fs=~q111+q112+q113+q114+q115+q116+q117+q118+q119+q120
+Social=~q51+q50+q49+q48+q47+q52
+Envir=~q54+q41+q55+q53+q56+q42+q44
+Physc=~q39+q38+q40+q43
+pain=~q94+q96+q89+q90+q95+q91+q93+q87+q86+q88+q98+q92+q85+q97+q83
+Anxiety=~q79+q68+q77+q66+q67+q76+q69+q73+q71+q72+q70
+selfcare=~q63+q64+q61+q62+q65
+Us_Act=~q74+q75+q84
+#Regression
+Social~fs 
+Envir~fs
+Physc~fs
+pain~fs
+Anxiety~fs
+selfcare~fs
+Us_Act~fs"
+
+#Performing the regression and storing the regression model
+mySem<-sem(mySemModel,data=thesisdata)
+
+#obtaining the regression coefficients
+summary(mySem,fit.measures=TRUE,standardized=TRUE)
+
+#Obtaining the goodness of fit indicators of the model
+fitMeasures(mySem,c("chisq", "rmsea", "srmr", "gfi", "ecvi"))
+reliability(mySem)
+
+# Obtaining the factor loadings of the three-factor model
+parameterEstimates(mySem, standardized=TRUE, ci=TRUE, level=0.95) %>%
+  filter(op == "=~") %>%
+  select('Latent Factor'=lhs, Indicator=rhs, B=est, SE=se, Z=z, 'p-value'=pvalue, 
+         Beta=std.all) %>% kable(digits = 3, format="pandoc", caption="Factor Loadings") # Summarises the table
+         
+#ploting the three-factor model (Completing SEM)
+semPaths(mySem, what = "paths", whatLabels="std", style="lisrel", layout ="tree3",
+         intercepts = TRUE, residuals = TRUE,edge.label.cex=0.6, thresholds = TRUE,nDigits=2,
+         intStyle = "multi", rotation = 4,curve=-3.4,curvature = 1.3,nCharNodes = 0, 
+         nCharEdges = 0,edge.color="blue",reorder = TRUE,structural = T,
+         equalizeManifests =FALSE, optimizeLatRes = TRUE, node.width = 1.2,node.heith=0.5,
+         edge.width = 0.5, shapeMan = "square", shapeLat = "ellipse",
+         shapeInt = "triangle", sizeMan = 4, sizeInt = 4, sizeLat = 4,
+         node.label.cex = .5,edge.label.color = "black",groups = "latents", pastel = TRUE,mar=c(2,9,2,1)) 
+											#/SEM END/
+                      
+#SEM HYPOTHESES
+#Specifying the Structural model of food insecurity vs social health
+FSvsSH		<-"fs=~q111+q112+q113+q114+q115+q116+q117+q118+q119+q120
+Social=~q51+q50+q49+q48+q47+q52
+#Regression
+Social~fs"
+
+#Performing the regression and storing the regression model
+H1<-sem(FSvsSH,data=thesisdata)
+
+#Obtaining the goodness of fit indicators of the model
+fitMeasures(H1,c("chisq", "rmsea", "srmr", "gfi", "ecvi","cfi","tli"))
+reliability(H1)
+
+#plotting the three-factor model
+semPaths(H1,what = "paths", whatLabels="std", style="lisrel", layout ="tree2",
+         ntercepts = TRUE, residuals = TRUE,edge.label.cex=0.6, thresholds = TRUE,nDigits=2,
+         intStyle = "multi", rotation = 4,curve=-3.5,curvature = 1,nCharNodes = 0, 
+         nCharEdges = 0,edge.color="blue" ,reorder = TRUE,
+         equalizeManifests =FALSE, optimizeLatRes = TRUE,shapeMan = "square", shapeLat = "ellipse",
+         shapeInt = "triangle", sizeMan = 4, sizeInt = 2, sizeLat = 5,node.label.cex = .5,
+         edge.label.color = "black",groups = "latents", pastel = TRUE)
+
+#specifying the Structural model of food insecurity vs environmental health
+FSvsEH	<-"fs=~q111+q112+q113+q114+q115+q116+q117+q118+q119+q120
+Envir=~q54+q41+q55+q53+q56+q42+q44
+#Regression
+Envir~fs"
+
+#Performing the regression and storing the regression model
+H2<-sem(FSvsEH,data=thesisdata)
+
+#Obtaining the goodness of fit indicators of the model
+fitMeasures(H2,c("chisq", "rmsea", "srmr", "gfi", "ecvi","cfi","tli"))
+reliability(H2)
+
+#plotting the three-factor model 
+semPaths(H2,what = "paths", whatLabels="std", style="lisrel", layout ="tree2",
+         ntercepts = TRUE, residuals = TRUE,edge.label.cex=0.6, thresholds = TRUE,nDigits=2,
+         intStyle = "multi", rotation = 4,curve=-3.5,curvature = 1,nCharNodes = 0, 
+         nCharEdges = 0,edge.color="blue" ,reorder = TRUE,
+         equalizeManifests =FALSE, optimizeLatRes = TRUE,shapeMan = "square", shapeLat = "ellipse",
+         shapeInt = "triangle", sizeMan = 4, sizeInt = 2, sizeLat = 5,node.label.cex = .5,
+         edge.label.color = "black",groups = "latents", pastel = TRUE)
+#specifying the Structural model of food insecurity vs physical health
+FSvsPH		<-"fs=~q111+q112+q113+q114+q115+q116+q117+q118+q119+q120
+Physc=~q39+q38+q40+q43
+#Regression
+Physc~fs"
+
+#Performing the regression and storing the regression model
+H3<-sem(FSvsPH,data=thesisdata)
+
+#Obtaining the goodness of fit indicators of the model
+fitMeasures(H3,c("chisq", "rmsea", "srmr", "gfi", "ecvi","cfi","tli"))
+reliability(H3)
+
+#plotting the three-factor model
+semPaths(H3,what = "paths", whatLabels="std", style="lisrel", layout ="tree2",
+         ntercepts = TRUE, residuals = TRUE,edge.label.cex=0.6, thresholds = TRUE,nDigits=2,
+         intStyle = "multi", rotation = 4,curve=-3.5,curvature = 1,nCharNodes = 0, 
+         nCharEdges = 0,edge.color="blue" ,reorder = TRUE,
+         equalizeManifests =FALSE, optimizeLatRes = TRUE,shapeMan = "square", shapeLat = "ellipse",
+         shapeInt = "triangle", sizeMan = 4, sizeInt = 2, sizeLat = 5,node.label.cex = .5,
+         edge.label.color = "black",groups = "latents", pastel = TRUE)
+#Specifying the Structural model of food insecurity vs Pain/Discomfort
+FSvsPaH	<-"fs=~q111+q112+q113+q114+q115+q116+q117+q118+q119+q120
+pain=~q94+q96+q89+q90+q95+q91+q93+q87+q86+q88+q98+q92+q85+q97+q83
+#Regression
+pain~fs"
+
+#Performing the regression and storing the regression model
+H4<-sem(FSvsPaH,data=thesisdata)
+
+#Obtaining the goodness of fit indicators of the model
+fitMeasures(H4,c("chisq", "rmsea", "srmr", "gfi", "ecvi","cfi","tli"))
+reliability(H4)
+
+#plotting the three-factor model 
+semPaths(H4,what = "paths", whatLabels="std", style="lisrel", layout ="tree2",
+         ntercepts = TRUE, residuals = TRUE,edge.label.cex=0.6, thresholds = TRUE,nDigits=2,
+         intStyle = "multi", rotation = 4,curve=-3.5,curvature = 1,nCharNodes = 0, 
+         nCharEdges = 0,edge.color="blue" ,reorder = TRUE,
+         equalizeManifests =FALSE, optimizeLatRes = TRUE,shapeMan = "square", shapeLat = "ellipse",
+         shapeInt = "triangle", sizeMan = 4, sizeInt = 2, sizeLat = 5,node.label.cex = .5,
+         edge.label.color = "black",groups = "latents", pastel = TRUE)
+#Specifying the Structural model of food insecurity vs Anxiety health
+FSvsAH	<-"fs=~q111+q112+q113+q114+q115+q116+q117+q118+q119+q120
+Anxiety=~q79+q68+q77+q66+q67+q76+q69+q73+q71+q72+q70
+#Regression
+Anxiety~fs"
+
+#Performing the regression and storing the regression model
+H5<-sem(FSvsAH,data=thesisdata)
+
+#Obtaining the goodness of fit indicators of the model
+fitMeasures(H5,c("chisq", "rmsea", "srmr", "gfi", "ecvi","cfi","tli"))
+reliability(H5)
+
+#plotting the three-factor model 
+semPaths(H5,what = "paths", whatLabels="std", style="lisrel", layout ="tree2",
+         ntercepts = TRUE, residuals = TRUE,edge.label.cex=0.6, thresholds = TRUE,nDigits=2,
+         intStyle = "multi", rotation = 4,curve=-3.5,curvature = 1,nCharNodes = 0, 
+         nCharEdges = 0,edge.color="blue" ,reorder = TRUE,
+         equalizeManifests =FALSE, optimizeLatRes = TRUE,shapeMan = "square", shapeLat = "ellipse",
+         shapeInt = "triangle", sizeMan = 4, sizeInt = 2, sizeLat = 5,node.label.cex = .5,
+         edge.label.color = "black",groups = "latents", pastel = TRUE)
+#Specifying the Structural model of food insecurity vs Self-Care health
+FSvsSC		<-"fs=~q111+q112+q113+q114+q115+q116+q117+q118+q119+q120
+selfcare=~q63+q64+q61+q62+q65
+#Regression
+selfcare~fs"
+
+#Performing the regression and storing the regression model
+H6<-sem(FSvsSC,data=thesisdata)
+
+#Obtaining the goodness of fit indicators of the model
+fitMeasures(H6,c("chisq", "rmsea", "srmr", "gfi", "ecvi","cfi","tli"))
+reliability(H6)
+
+#plotting the three-factor model 
+semPaths(H6,what = "paths", whatLabels="std", style="lisrel", layout ="tree2",
+         ntercepts = TRUE, residuals = TRUE,edge.label.cex=0.6, thresholds = TRUE,nDigits=2,
+         intStyle = "multi", rotation = 4,curve=-3.5,curvature = 1,nCharNodes = 0, 
+         nCharEdges = 0,edge.color="blue" ,reorder = TRUE,
+         equalizeManifests =FALSE, optimizeLatRes = TRUE,shapeMan = "square", shapeLat = "ellipse",
+         shapeInt = "triangle", sizeMan = 4, sizeInt = 2, sizeLat = 5,node.label.cex = .5,
+         edge.label.color = "black",groups = "latents", pastel = TRUE)
+#Specifying the Structural model of food insecurity vs Usual Activities
+FSvsUA		<-"fs=~q111+q112+q113+q114+q115+q116+q117+q118+q119+q120
+Us_Act=~q74+q75+q84
+#Regression
+Us_act~fs"
+
+#Performing the regression and storing the regression model
+H7<-sem(FSvsUA,data=thesisdata)
+
+#Obtaining the goodness of fit indicators of the model
+fitMeasures(H7,c("chisq", "rmsea", "srmr", "gfi", "ecvi","cfi","tli"))
+reliability(H7)
+#plotting the three-factor model 
+semPaths(H7,what = "paths", whatLabels="std", style="lisrel", layout ="tree2",
+         ntercepts = TRUE, residuals = TRUE,edge.label.cex=0.6, thresholds = TRUE,nDigits=2,
+         intStyle = "multi", rotation = 4,curve=-3.5,curvature = 1,nCharNodes = 0, 
+         nCharEdges = 0,edge.color="blue" ,reorder = TRUE,
+         equalizeManifests =FALSE, optimizeLatRes = TRUE,shapeMan = "square", shapeLat = "ellipse",
+         shapeInt = "triangle", sizeMan = 4, sizeInt = 2, sizeLat = 5,node.label.cex = .5,
+         edge.label.color = "black",groups = "latents", pastel = TRUE)		#/END/
